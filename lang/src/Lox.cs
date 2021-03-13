@@ -54,10 +54,13 @@ namespace Lox
       var lexer = new Lexer.Lexer(source);
       List<Lexer.Token> tokens = lexer.Lex();
 
-      Console.WriteLine("Token breakdown:");
+      var parser = new Parser.Parser(tokens);
+      Syntax.Expr expr = parser.Parse();
 
-      foreach (var token in tokens)
-        Console.WriteLine($"- {token}");
+      if (Lox.hadError) return;
+
+      var printer = new Syntax.AstPrinter();
+      Console.WriteLine(printer.Print(expr));
     }
   }
 }

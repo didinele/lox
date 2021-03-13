@@ -36,6 +36,18 @@ namespace Lox.Lexer
       this.Source = source;
     }
 
+    public List<Token> Lex()
+    {
+      while (!this.Ended)
+      {
+        this.start = this.current;
+        this.LexToken();
+      }
+
+      this.Tokens.Add(new Token(TokenType.EOF, "", null, line));
+      return this.Tokens;
+    }
+
     private bool Ended => this.current >= this.Source.Length;
 
     private char Advance() => this.Source[this.current++];
@@ -45,20 +57,20 @@ namespace Lox.Lexer
       if (this.Ended) return false;
       if (this.Source[this.current] != expected) return false;
 
-      current++;
+      this.current++;
       return true;
     }
 
     private char Peek()
     {
       if (this.Ended) return '\0';
-      return this.Source[current];
+      return this.Source[this.current];
     }
 
     private char PeekNext()
     {
       if (this.current + 1 >= this.Source.Length) return '\0';
-      return this.Source[current + 1];
+      return this.Source[this.current + 1];
     }
 
     private void HandleString()
@@ -171,18 +183,6 @@ namespace Lox.Lexer
 
           break;
       }
-    }
-
-    public List<Token> Lex()
-    {
-      while (!this.Ended)
-      {
-        this.start = this.current;
-        this.LexToken();
-      }
-
-      this.Tokens.Add(new Token(TokenType.EOF, "", null, line));
-      return this.Tokens;
     }
   }
 }

@@ -11,7 +11,8 @@ namespace Lox
 
     public static void Report(int line, string where, string message)
     {
-      Console.Error.WriteLine($"[line {line}] Error{where}: {message}");
+      var w = where.Length > 0 ? $" {where}" : "";
+      Console.Error.WriteLine($"[line {line}] Error{w}: {message}");
       Lox.hadError = true;
     }
   }
