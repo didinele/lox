@@ -8,6 +8,10 @@ namespace Lox
   {
     public static bool hadError = false;
 
+    public static bool hadRuntimeError = false;
+
+    private static readonly Interpreter.Interpreter Interpreter = new Interpreter.Interpreter();
+
     public static void Main(string[] args)
     {
       if (args.Length > 1)
@@ -35,6 +39,7 @@ namespace Lox
 
       Lox.Run(File.ReadAllText(path));
       if (Lox.hadError) Environment.Exit(65);
+      else if (Lox.hadRuntimeError) Environment.Exit(70);
     }
 
     private static void RunPrompt()
@@ -59,8 +64,7 @@ namespace Lox
 
       if (Lox.hadError) return;
 
-      var printer = new Syntax.AstPrinter();
-      Console.WriteLine(printer.Print(expr));
+      Lox.Interpreter.Interpret(expr);
     }
   }
 }
