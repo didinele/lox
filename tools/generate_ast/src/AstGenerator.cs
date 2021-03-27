@@ -1,4 +1,4 @@
-﻿using System;
+﻿ using System;
 using System.Text;
 using System.IO;
 using System.Collections.Generic;
@@ -15,14 +15,21 @@ namespace Lox.Tools.GenerateAst
         Environment.Exit(64);
       }
 
-      var types = new List<string>{
+      AstGenerator.DefineAst(args[0], "Expr", new List<string>{
+        "Assign   : Token name, Expr value",
         "Binary   : Expr left, Token opr, Expr right",
-        "Grouping : Expr expression",
+        "Grouping : Expr expr",
         "Literal  : object value",
-        "Unary    : Token opr, Expr right"
-      };
+        "Unary    : Token opr, Expr right",
+        "Variable : Token name"
+      });
 
-      AstGenerator.DefineAst(args[0], "Expr", types);
+      AstGenerator.DefineAst(args[0], "Stmt", new List<string>{
+        "Block      : List<Stmt> statements",
+        "Expression : Expr expr",
+        "Print      : Expr expr",
+        "Var        : Token name, Expr initializer"
+      });
     }
 
     private static void DefineAst(string outputDir, string baseName, List<string> types)
@@ -76,7 +83,8 @@ namespace Lox.Tools.GenerateAst
     private static void DefineMeta(FileStream fs)
     {
       AstGenerator.AddText(fs, $"// Generated automatically using tools/generate_ast on {DateTime.UtcNow.ToString()} UTC\n\n");
-      AstGenerator.AddText(fs, "using Lox.Lexer;\n\n");
+      AstGenerator.AddText(fs, "using Lox.Lexer;\n");
+      AstGenerator.AddText(fs, "using System.Collections.Generic;\n\n");
     }
 
     private static void DefineVisitor(FileStream fs, List<string> types)

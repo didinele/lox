@@ -20,7 +20,7 @@ namespace Lox.Syntax
     // Visitors
     string Expr.IVisitor<string>.Visit(Expr.Binary binary) => this.Parenthesize(binary.Opr.Lexeme, binary.Left, binary.Right);
 
-    string Expr.IVisitor<string>.Visit(Expr.Grouping grouping) => this.Parenthesize("group", grouping.Expression);
+    string Expr.IVisitor<string>.Visit(Expr.Grouping grouping) => this.Parenthesize("group", grouping.Expr);
 
     string Expr.IVisitor<string>.Visit(Expr.Literal literal) => literal.Value == null ? "nil" : literal.Value.ToString();
 

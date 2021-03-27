@@ -14,13 +14,13 @@ namespace Lox.Parser
       this.Tokens = tokens;
     }
 
-    public Expr Parse()
+    public List<Stmt> Parse()
     {
-      try {
-        return this.Expression();
-      } catch {
-        return null;
-      }
+      var statements = new List<Stmt>();
+      while (!this.Ended)
+        statements.Add(this.Declaration());
+
+      return statements;
     }
 
     // Utils
@@ -99,7 +99,25 @@ namespace Lox.Parser
       }
     }
 
-    private Expr Expression() => this.Equality();
+    private Expr Expression() => this.Assignment();
+
+    private Expr Assignment()
+    {
+      Expr expr = this.Equality();
+
+      if (this.Match(TokenType.EQUAL))
+      {
+        Token equals = this.Previous();
+        Expr value = this.Assignment();
+
+        if (expr is Expr.Variable variable)
+          return new Expr.Assign(variable.Name, value);
+
+        this.Error(equals, "Invalid assignment target.");
+      }
+
+      return expr;
+    }
 
     private Expr Equality()
     {
@@ -178,6 +196,9 @@ namespace Lox.Parser
       if (this.Match(TokenType.NUMBER, TokenType.STRING))
         return new Expr.Literal(this.Previous().Literal);
 
+      if (this.Match(TokenType.IDENTIFIER))
+        return new Expr.Variable(this.Previous());
+
       if (this.Match(TokenType.LEFT_PAREN))
       {
         Expr expr = this.Expression();
@@ -186,6 +207,68 @@ namespace Lox.Parser
       }
 
       throw this.Error(this.Peek(), "Expected an expression");
+    }
+
+    private Stmt PrintStatement()
+    {
+      Expr value = this.Expression();
+      this.Consume(TokenType.SEMICOLON, "Expected \";\" after value");
+      return new Stmt.Print(value);
+    }
+
+    private Stmt ExpressionStatement()
+    {
+      Expr expr = this.Expression();
+      this.Consume(TokenType.SEMICOLON, "Expected \";\" after value");
+      return new Stmt.Expression(expr);
+    }
+
+    private Stmt Statement()
+    {
+      if (this.Match(TokenType.PRINT))
+        return this.PrintStatement();
+
+      if (this.Match(TokenType.LEFT_BRACE))
+        return new Stmt.Block(this.Block());
+
+      return this.ExpressionStatement();
+    }
+
+    private List<Stmt> Block()
+    {
+      var statements = new List<Stmt>();
+
+      while (this.Check(TokenType.RIGHT_BRACE) && !this.Ended)
+        statements.Add(this.Declaration());
+
+      this.Consume(TokenType.RIGHT_BRACE, "Expected \"}\" after block.");
+      return statements;
+    }
+
+    private Stmt Declaration()
+    {
+      try
+      {
+        if (this.Match(TokenType.VAR)) return this.VarDeclaration();
+        return this.Statement();
+      }
+      catch (ParseError)
+      {
+        this.Synchronize();
+        return null;
+      }
+    }
+
+    private Stmt VarDeclaration()
+    {
+      Token name = this.Consume(TokenType.IDENTIFIER, "Expected a variable name.");
+
+      Expr initializer = null;
+      if (this.Match(TokenType.EQUAL))
+        initializer = this.Expression();
+
+      this.Consume(TokenType.SEMICOLON, "Expected \";\" after variable declaration.");
+      return new Stmt.Var(name, initializer);
     }
   }
 }

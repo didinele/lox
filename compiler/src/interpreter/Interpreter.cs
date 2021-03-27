@@ -1,21 +1,32 @@
+using System;
+using System.Collections.Generic;
 using Lox.Syntax;
 using Lox.Lexer;
 
 namespace Lox.Interpreter
 {
-  public class Interpreter : Expr.IVisitor<object>
+  struct Void {}
+
+  public class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<Void>
   {
-    public void Interpret(Expr expression)
+    private Environment environment = new Environment();
+
+    public void Interpret(List<Stmt> statements)
     {
-      try {
-        object value = this.Evaluate(expression);
-        System.Console.WriteLine(this.Stringify(value));
-      } catch (RuntimeError error) {
+      try
+      {
+        foreach (var statement in statements)
+          this.Execute(statement);
+      }
+      catch (RuntimeError error)
+      {
         LoxUtil.RuntimeError(error);
       }
     }
 
     private object Evaluate(Expr expr) => expr.Accept(this);
+
+    private void Execute(Stmt stmt) => stmt.Accept(this);
 
     private string Stringify(object value)
     {
@@ -61,8 +72,22 @@ namespace Lox.Interpreter
       if (badOperand) throw new RuntimeError(opr, multiple ? "Operands must be numbers" : "Operand must be a number");
     }
 
+    private void ExecuteBlock(List<Stmt> statements, Environment environment)
+    {
+      Environment previous = this.environment;
+
+      try {
+        this.environment = environment;
+
+        foreach (var statement in statements)
+          this.Execute(statement);
+      } finally {
+        this.environment = previous;
+      }
+    }
+
     // Visitors
-    object Expr.IVisitor<object>.Visit(Expr.Grouping grouping) => this.Evaluate(grouping.Expression);
+    object Expr.IVisitor<object>.Visit(Expr.Grouping grouping) => this.Evaluate(grouping.Expr);
 
     object Expr.IVisitor<object>.Visit(Expr.Literal literal) => literal.Value;
 
@@ -122,6 +147,44 @@ namespace Lox.Interpreter
         // Unreachable
         default: return null;
       }
+    }
+
+    object Expr.IVisitor<object>.Visit(Expr.Variable variable) => this.environment.Get(variable.Name);
+
+    object Expr.IVisitor<object>.Visit(Expr.Assign assign)
+    {
+      object value = this.Evaluate(assign.Value);
+      this.environment.Assign(assign.Name, value);
+      return value;
+    }
+
+    Void Stmt.IVisitor<Void>.Visit(Stmt.Block block)
+    {
+      this.ExecuteBlock(block.Statements, new Environment(this.environment));
+      return new Void();
+    }
+
+    Void Stmt.IVisitor<Void>.Visit(Stmt.Expression expression)
+    {
+      this.Evaluate(expression.Expr);
+      return new Void();
+    }
+
+    Void Stmt.IVisitor<Void>.Visit(Stmt.Print print)
+    {
+      object value = this.Evaluate(print.Expr);
+      Console.WriteLine(this.Stringify(value));
+      return new Void();
+    }
+
+    Void Stmt.IVisitor<Void>.Visit(Stmt.Var var)
+    {
+      object value = null;
+      if (var.Initializer != null)
+        value = this.Evaluate(var.Initializer);
+
+      this.environment.Define(var.Name.Lexeme, value);
+      return new Void();
     }
   }
 }

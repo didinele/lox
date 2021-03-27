@@ -1,6 +1,7 @@
-// Generated automatically using tools/generate_ast on 3/12/2021 1:49:07 PM UTC
+// Generated automatically using tools/generate_ast on 3/27/2021 2:00:27 PM UTC
 
 using Lox.Lexer;
+using System.Collections.Generic;
 
 namespace Lox.Syntax
 {
@@ -8,10 +9,26 @@ namespace Lox.Syntax
   {
     public interface IVisitor<T>
     {
+      T Visit(Assign assign);
       T Visit(Binary binary);
       T Visit(Grouping grouping);
       T Visit(Literal literal);
       T Visit(Unary unary);
+      T Visit(Variable variable);
+    }
+
+    public class Assign : Expr
+    {
+      public readonly Token Name;
+      public readonly Expr Value;
+
+      public Assign(Token name, Expr value)
+      {
+        this.Name = name;
+        this.Value = value;
+      }
+
+      override public T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);
     }
 
     public class Binary : Expr
@@ -32,11 +49,11 @@ namespace Lox.Syntax
 
     public class Grouping : Expr
     {
-      public readonly Expr Expression;
+      public readonly Expr Expr;
 
-      public Grouping(Expr expression)
+      public Grouping(Expr expr)
       {
-        this.Expression = expression;
+        this.Expr = expr;
       }
 
       override public T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);
@@ -63,6 +80,18 @@ namespace Lox.Syntax
       {
         this.Opr = opr;
         this.Right = right;
+      }
+
+      override public T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);
+    }
+
+    public class Variable : Expr
+    {
+      public readonly Token Name;
+
+      public Variable(Token name)
+      {
+        this.Name = name;
       }
 
       override public T Accept<T>(IVisitor<T> visitor) => visitor.Visit(this);

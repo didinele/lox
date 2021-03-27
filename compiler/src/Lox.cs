@@ -60,11 +60,11 @@ namespace Lox
       List<Lexer.Token> tokens = lexer.Lex();
 
       var parser = new Parser.Parser(tokens);
-      Syntax.Expr expr = parser.Parse();
+      List<Syntax.Stmt> statements = parser.Parse();
 
       if (Lox.hadError) return;
 
-      Lox.Interpreter.Interpret(expr);
+      Lox.Interpreter.Interpret(statements);
     }
   }
 }
